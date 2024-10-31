@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_APP=app
+      - FLASK_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/word_counter
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ..:/app
+    shm_size: '2gb'
+    depends_on:
+      - mongo
+      - redis
+      - worker
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: rq worker -u redis://redis:6379/0
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/word_counter
+      - REDIS_URL=redis://redis:6379/0
+      - DISPLAY=:99
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ..:/app
+    shm_size: '2gb'
+    depends_on:
+      - redis
+      - mongo
+
+  mongo:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongodb_data:

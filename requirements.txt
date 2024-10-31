@@ -1,0 +1,12 @@
+flask
+Flask-RQ2
+Flask-WTF
+redis
+pymongo
+requests
+python-dotenv
+requests
+rq
+beautifulsoup4
+selenium
+webdriver_manager

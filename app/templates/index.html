@@ -1,0 +1,108 @@
+{% extends "base.html" %} {% block content %}
+<h1 class="text-center">URL Word Counter</h1>
+
+<div class="row mt-4 justify-content-center">
+  <div class="col-md-6 text-center">
+    <form method="POST">
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        {{ form.url.label(class="form-label") }}
+        {{ form.url(class="form-control", placeholder="https://google.com") }}
+        {% if form.url.errors %}
+          {% for error in form.url.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+        {% endif %}
+      </div>
+      {{ form.submit(class="btn btn-primary w-100") }}
+    </form>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12">
+    <h2>Job Results</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Word Count</th>
+          <th>Submitted</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr>
+          <td>{{ job.url }}</td>
+          <td>
+            {% if job.status == 'failed' %}
+              <span class="badge bg-danger">Failed</span>
+            {% elif job.status == 'completed' %}
+              <span class="badge bg-success">Completed</span>
+            {% else %}
+              <span class="badge bg-warning">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if job.status == 'completed' %}
+              {{ job.word_count }}
+            {% elif job.status == 'failed' %}
+              <span class="text-danger">Error</span>
+            {% else %}
+              Pending
+            {% endif %}
+          </td>
+          <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>
+            {% if job.status == 'completed' %}
+              <button class="btn btn-sm btn-primary" 
+                      type="button" 
+                      data-bs-toggle="collapse" 
+                      data-bs-target="#words-{{ job._id }}" 
+                      aria-expanded="false">
+                View Words
+              </button>
+            {% elif job.status == 'failed' %}
+              <button class="btn btn-sm btn-danger" 
+                      type="button" 
+                      data-bs-toggle="collapse" 
+                      data-bs-target="#error-{{ job._id }}" 
+                      aria-expanded="false">
+                View Error
+              </button>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="5" class="p-0">
+            {% if job.status == 'completed' %}
+              <div class="collapse" id="words-{{ job._id }}">
+                <div class="collapse-content">
+                  <div class="words-container">
+                    {% if job.words %}
+                      {% for word in job.words %}
+                        <span class="badge bg-secondary">{{ word }}</span>
+                      {% endfor %}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% elif job.status == 'failed' %}
+              <div class="collapse" id="error-{{ job._id }}">
+                <div class="collapse-content">
+                  <div class="alert alert-danger mb-0">
+                    {{ job.error }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
