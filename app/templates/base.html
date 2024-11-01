@@ -45,5 +45,168 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
+    <script>
+    class JobPoller {
+        constructor(jobId) {
+            this.jobId = jobId;
+            this.pollInterval = 2000;
+            this.maxAttempts = 150;
+            this.attempts = 0;
+        }
+
+        async startPolling() {
+            while (this.attempts < this.maxAttempts) {
+                try {
+                    const response = await fetch(`/api/jobs/${this.jobId}`);
+                    const data = await response.json();
+
+                    const jobRow = document.querySelector(`tr[data-job-id="${this.jobId}"]`);
+                    if (!jobRow) {
+                        location.reload();
+                        break;
+                    }
+
+                    if (data.status !== 'pending') {
+                        this.updateRow(jobRow, data);
+                        break;
+                    }
+
+                    this.attempts++;
+                    await new Promise(resolve => setTimeout(resolve, this.pollInterval));
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    break;
+                }
+            }
+        }
+
+        updateRow(jobRow, data) {
+            const statusCell = jobRow.querySelector('[data-status]');
+            const wordCountCell = jobRow.querySelector('[data-word-count]');
+            const actionsCell = jobRow.querySelector('[data-actions]');
+
+            if (data.status === 'completed') {
+                statusCell.innerHTML = '<span class="badge bg-success">Completed</span>';
+                wordCountCell.textContent = data.word_count;
+                actionsCell.innerHTML = `
+                    <button class="btn btn-sm btn-primary" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#words-${this.jobId}" 
+                            aria-expanded="false">
+                        View Words
+                    </button>`;
+            } else if (data.status === 'failed') {
+                statusCell.innerHTML = '<span class="badge bg-danger">Failed</span>';
+                wordCountCell.innerHTML = '<span class="text-danger">Error</span>';
+                actionsCell.innerHTML = `
+                    <button class="btn btn-sm btn-danger" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#error-${this.jobId}" 
+                            aria-expanded="false">
+                        View Error
+                    </button>`;
+            }
+
+            // Update or add the collapse row
+            let collapseRow = jobRow.nextElementSibling;
+            if (!collapseRow || !collapseRow.querySelector('td[colspan="5"]')) {
+                collapseRow = document.createElement('tr');
+                const collapseCell = document.createElement('td');
+                collapseCell.setAttribute('colspan', '5');
+                collapseCell.className = 'p-0';
+                collapseRow.appendChild(collapseCell);
+                jobRow.parentNode.insertBefore(collapseRow, jobRow.nextSibling);
+            }
+
+            const collapseCell = collapseRow.querySelector('td');
+            if (data.status === 'completed') {
+                collapseCell.innerHTML = `
+                    <div class="collapse" id="words-${this.jobId}">
+                        <div class="collapse-content">
+                            <div class="words-container">
+                                ${data.words.map(word => `<span class="badge bg-secondary">${word}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>`;
+            } else if (data.status === 'failed') {
+                collapseCell.innerHTML = `
+                    <div class="collapse" id="error-${this.jobId}">
+                        <div class="collapse-content">
+                            <div class="alert alert-danger mb-0">
+                                ${data.error}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitButton = form.querySelector('input[type="submit"]');
+                submitButton.disabled = true;
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch('/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Check for validation errors
+                    if (data.errors) {
+                        // Display validation errors
+                        const errorSpan = form.querySelector('.text-danger');
+                        if (errorSpan) {
+                            errorSpan.textContent = data.errors.url[0];
+                        } else {
+                            const errorDiv = document.createElement('span');
+                            errorDiv.className = 'text-danger';
+                            errorDiv.textContent = data.errors.url[0];
+                            form.querySelector('.mb-3').appendChild(errorDiv);
+                        }
+                        return;
+                    }
+                    
+                    // Create a new row for the job
+                    const tbody = document.querySelector('tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.setAttribute('data-job-id', data.job_id);
+                    
+                    const url = formData.get('url');
+                    newRow.innerHTML = `
+                        <td>${url}</td>
+                        <td data-status><span class="badge bg-warning">Pending</span></td>
+                        <td data-word-count>Pending</td>
+                        <td>${new Date().toLocaleString()}</td>
+                        <td data-actions></td>
+                    `;
+                    
+                    tbody.insertBefore(newRow, tbody.firstChild);
+                    
+                    // Start polling
+                    new JobPoller(data.job_id).startPolling();
+                    
+                    // Reset form
+                    form.reset();
+                } catch (error) {
+                    console.error('Error:', error);
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
+        }
+    });
+    </script>
   </body>
 </html>

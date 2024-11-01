@@ -10,3 +10,4 @@ rq
 beautifulsoup4
 selenium
 webdriver_manager
+validators

@@ -34,9 +34,9 @@
       </thead>
       <tbody>
         {% for job in jobs %}
-        <tr>
+        <tr data-job-id="{{ job.rq_job_id }}">
           <td>{{ job.url }}</td>
-          <td>
+          <td data-status>
             {% if job.status == 'failed' %}
               <span class="badge bg-danger">Failed</span>
             {% elif job.status == 'completed' %}
@@ -45,7 +45,7 @@
               <span class="badge bg-warning">Pending</span>
             {% endif %}
           </td>
-          <td>
+          <td data-word-count>
             {% if job.status == 'completed' %}
               {{ job.word_count }}
             {% elif job.status == 'failed' %}
@@ -55,7 +55,7 @@
             {% endif %}
           </td>
           <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-          <td>
+          <td data-actions>
             {% if job.status == 'completed' %}
               <button class="btn btn-sm btn-primary" 
                       type="button" 

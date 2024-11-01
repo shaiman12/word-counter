@@ -58,3 +58,7 @@ class JobResult:
     @staticmethod
     def get_all():
         return db.jobs.find().sort("created_at", -1)
+
+    @staticmethod
+    def get_by_id(job_id: str) -> dict:
+        return db.jobs.find_one({"rq_job_id": job_id})

@@ -29,10 +29,9 @@ Access the application at `http://localhost:5001`
 ## Usage
 1. Enter a website URL in the input field
 2. Click "Count Words" to submit the job
-3. Monitor the job status in the results table below the search bar - a refresh of the page is necessary
+3. Monitor the job status in the results table below the search bar - polling has been implemented so no need to refresh the page
 4. Once completed, click "View Words" to see the individual words found
 
 ## Areas for improvement
 - Using a more robust async job package like Celery
-- Polling on the index page so that the user does not have to refresh the page 
 - Showing more user friendly errors
