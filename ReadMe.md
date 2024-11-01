@@ -35,4 +35,4 @@ Access the application at `http://localhost:5001`
 ## Areas for improvement
 - Using a more robust async job package like Celery
 - Polling on the index page so that the user does not have to refresh the page 
-- 
+- Showing more user friendly errors

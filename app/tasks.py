@@ -26,7 +26,7 @@ def count_words_at_url(url: str) -> int:
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.get(url)
         
-        driver.implicitly_wait(20)
+        driver.implicitly_wait(30)
 
         
         page_source = driver.page_source
